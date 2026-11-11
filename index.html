@@ -4,12 +4,12 @@ html
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>3D CNC Моделирование Резной Доски (Престол 160x585x40 мм)</title>
+  <title>3D CNC Моделирование — Престол (stameska заказ 1580)</title>
   
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   
-  <!-- Three.js & OrbitControls -->
+  <!-- Three.js + OrbitControls -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
@@ -22,72 +22,105 @@ html
       user-select: none;
       -webkit-user-select: none;
     }
-    
     .font-mono {
       font-family: 'JetBrains Mono', monospace;
     }
 
-    /* Кастомный скроллбар для панели параметров */
     ::-webkit-scrollbar {
-      width: 6px;
+      width: 5px;
     }
     ::-webkit-scrollbar-track {
-      background: #111827;
+      background: #0b0f19;
     }
     ::-webkit-scrollbar-thumb {
-      background: #374151;
+      background: #232d42;
       border-radius: 3px;
     }
     ::-webkit-scrollbar-thumb:hover {
-      background: #4b5563;
+      background: #374151;
     }
 
-    /* Ползунки */
     input[type=range] {
       accent-color: #3b82f6;
     }
 
-    /* Стеклянные панели в стиле CAD/CAM */
     .cad-panel {
-      background: rgba(17, 24, 39, 0.88);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(55, 65, 81, 0.65);
+      background: rgba(13, 17, 28, 0.88);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(45, 55, 78, 0.7);
     }
   </style>
 </head>
 <body class="bg-gray-950 text-gray-100 h-screen w-screen flex flex-col md:flex-row relative">
 
-  <!-- 3D Canvas Container -->
-  <div id="viewport-container" class="relative flex-1 h-full w-full overflow-hidden bg-gradient-to-b from-gray-900 via-gray-950 to-[#0a0d14]">
+  <!-- 3D Область вьювера -->
+  <div id="viewport-container" class="relative flex-1 h-full w-full overflow-hidden bg-gradient-to-b from-[#0f172a] via-[#090d16] to-[#04060a]">
     <canvas id="webgl-canvas" class="w-full h-full block cursor-grab active:cursor-grabbing"></canvas>
 
-    <!-- Верхний оверлей: Инфо о детали и быстрые проекции -->
-    <div class="absolute top-4 left-4 z-10 flex flex-wrap items-center gap-2 pointer-events-auto">
+    <!-- Верхний оверлей: Инфо и переключатель основных режимов деталей -->
+    <div class="absolute top-3 left-3 right-3 md:right-auto z-10 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pointer-events-auto">
+      
+      <!-- Паспорт детали по чертежу -->
       <div class="cad-panel px-3.5 py-2 rounded-xl shadow-2xl flex items-center gap-3">
         <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></div>
         <div>
-          <h1 class="text-xs font-semibold text-gray-200 tracking-wide uppercase">Престол / Декор М 1:4</h1>
-          <p class="text-[11px] font-mono text-gray-400">160 × 585 × 40 мм | Выборка: -20 мм</p>
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-bold text-gray-100 uppercase tracking-wide">Престол №1580</span>
+            <span class="text-[10px] px-1.5 py-0.2 rounded bg-amber-900/60 text-amber-300 border border-amber-700/50">ДУБ сорт 0-1</span>
+          </div>
+          <p id="part-subtitle" class="text-[11px] font-mono text-gray-400">Стойка: 160 × 585 мм | Поле: 100 мм</p>
         </div>
       </div>
 
-      <!-- Кнопки стандартных видов камеры -->
-      <div class="cad-panel p-1 rounded-xl shadow-lg flex items-center gap-1 text-xs font-medium">
-        <button id="view-iso" class="px-2.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 hover:text-white transition">3D Изо</button>
-        <button id="view-top" class="px-2.5 py-1.5 rounded-lg hover:bg-gray-800 text-gray-300 hover:text-white transition">Сверху</button>
-        <button id="view-front" class="px-2.5 py-1.5 rounded-lg hover:bg-gray-800 text-gray-300 hover:text-white transition">Спереди</button>
-        <button id="view-side" class="px-2.5 py-1.5 rounded-lg hover:bg-gray-800 text-gray-300 hover:text-white transition">Сбоку</button>
-        <button id="reset-cam" title="Сбросить положение камеры" class="p-1.5 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-white transition">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-        </button>
+      <!-- Переключатель 3 режимов моделирования -->
+      <div class="cad-panel p-1 rounded-xl shadow-lg flex items-center gap-1 text-xs font-medium bg-gray-900/90">
+        <button id="mode-board" class="mode-tab px-3 py-1.5 rounded-lg bg-blue-600 text-white font-semibold transition">Резная доска</button>
+        <button id="mode-rosette" class="mode-tab px-3 py-1.5 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition">Розетки (Лист 2)</button>
+        <button id="mode-assembly" class="mode-tab px-3 py-1.5 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition">Угловой узел (L-182)</button>
+      </div>
+
+      <!-- Кнопки быстрых ракурсов камеры -->
+      <div class="cad-panel p-1 rounded-xl shadow-lg flex items-center gap-1 text-xs">
+        <button id="view-iso" class="px-2.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 transition">3D Изо</button>
+        <button id="view-top" class="px-2.5 py-1.5 rounded-lg hover:bg-gray-800 text-gray-300 transition">План</button>
+        <button id="view-front" class="px-2.5 py-1.5 rounded-lg hover:bg-gray-800 text-gray-300 transition">Фас</button>
+        <button id="view-side" class="px-2.5 py-1.5 rounded-lg hover:bg-gray-800 text-gray-300 transition">Профиль</button>
       </div>
     </div>
 
-    <!-- Легенда глубин ЧПУ (показывается в режиме Heatmap) -->
-    <div id="depth-legend" class="hidden absolute bottom-6 left-4 z-10 cad-panel p-3 rounded-xl shadow-xl">
-      <div class="text-[11px] font-semibold text-gray-300 mb-1.5">Шкала глубин фрезеровки (Z)</div>
+    <!-- Размеры-оверлеи (Контрольные габариты по чертежу) -->
+    <div id="dim-overlay" class="absolute bottom-4 left-4 z-10 cad-panel p-2.5 rounded-xl text-[11px] font-mono text-gray-300 flex items-center gap-4">
+      <div class="flex items-center gap-1.5">
+        <span class="text-blue-400 font-bold">W:</span>
+        <span id="dim-w">160 мм</span>
+      </div>
+      <div class="w-px h-3 bg-gray-700"></div>
+      <div class="flex items-center gap-1.5">
+        <span class="text-blue-400 font-bold">L:</span>
+        <span id="dim-l">585 мм</span>
+      </div>
+      <div class="w-px h-3 bg-gray-700"></div>
+      <div class="flex items-center gap-1.5">
+        <span class="text-emerald-400 font-bold">Поле:</span>
+        <span id="dim-core">100 мм</span>
+      </div>
+      <div class="w-px h-3 bg-gray-700"></div>
+      <div class="flex items-center gap-1.5">
+        <span class="text-amber-400 font-bold">Поля:</span>
+        <span>2 × 30 мм</span>
+      </div>
+      <div class="w-px h-3 bg-gray-700"></div>
+      <div class="flex items-center gap-1.5">
+        <span class="text-rose-400 font-bold">Z-рез:</span>
+        <span id="dim-cut">-20 мм</span>
+      </div>
+    </div>
+
+    <!-- Легенда шкалы ЧПУ глубин -->
+    <div id="depth-legend" class="hidden absolute bottom-16 left-4 z-10 cad-panel p-3 rounded-xl shadow-xl">
+      <div class="text-[11px] font-semibold text-gray-300 mb-1.5">Шкала глубин выборки фрезой</div>
       <div class="flex items-center gap-2">
-        <div class="w-32 h-3 rounded-md bg-gradient-to-r from-blue-500 via-emerald-400 via-amber-400 to-rose-600"></div>
+        <div class="w-36 h-3 rounded bg-gradient-to-r from-blue-500 via-emerald-400 via-amber-400 to-rose-600"></div>
       </div>
       <div class="flex justify-between text-[10px] font-mono text-gray-400 mt-1">
         <span>0 мм (Поверхность)</span>
@@ -96,180 +129,189 @@ html
       </div>
     </div>
 
-    <!-- Кнопка скрытия/раскрытия боковой панели на мобильных -->
-    <button id="toggle-sidebar" class="md:hidden absolute top-4 right-4 z-20 cad-panel p-2.5 rounded-xl text-gray-200">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+    <!-- Кнопка мобильного меню сайдбара -->
+    <button id="toggle-sidebar" class="md:hidden absolute top-3 right-3 z-20 cad-panel p-2.5 rounded-xl text-gray-200">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/></svg>
     </button>
   </div>
 
-  <!-- Боковая панель управления CAM/CAD -->
-  <aside id="sidebar" class="w-full md:w-96 h-1/2 md:h-full bg-gray-900 border-t md:border-t-0 md:border-l border-gray-800 flex flex-col z-20 transition-transform duration-300">
+  <!-- Боковая CAD/CAM панель настроек -->
+  <aside id="sidebar" class="w-full md:w-[390px] h-[48%] md:h-full bg-[#0b0f19] border-t md:border-t-0 md:border-l border-gray-800 flex flex-col z-20 transition-all duration-300">
     
     <!-- Заголовок панели -->
-    <div class="p-4 border-b border-gray-800 flex items-center justify-between">
+    <div class="p-3.5 border-b border-gray-800/90 flex items-center justify-between">
       <div class="flex items-center gap-2">
-        <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
-        <span class="text-sm font-bold tracking-wide uppercase text-gray-200">Параметры ЧПУ & Рельефа</span>
+        <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        <span class="text-xs font-bold uppercase tracking-wider text-gray-200">Параметры & Моделирование ЧПУ</span>
       </div>
-      <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-900/60 text-blue-300 border border-blue-700/50">CAM Solid</span>
+      <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800">Manifold Solid</span>
     </div>
 
-    <!-- Содержимое со скроллом -->
-    <div class="flex-1 overflow-y-auto p-4 space-y-5 text-xs">
-      
-      <!-- Секция: Визуальный материал -->
-      <div class="space-y-2">
-        <label class="font-semibold text-gray-300 flex items-center justify-between">
-          <span>Режим отображения (Шейдер)</span>
+    <!-- Контейнер настроек со скроллом -->
+    <div class="flex-1 overflow-y-auto p-4 space-y-4 text-xs">
+
+      <!-- БЛОК ВЫБОРА РОЗЕТКИ (Показывается при активном режиме розеток или капители) -->
+      <div id="rosette-selector-block" class="space-y-2 p-3 bg-gray-900/80 rounded-xl border border-gray-800">
+        <label class="font-semibold text-amber-300 flex items-center justify-between">
+          <span>Орнамент розетки (Лист 2 ТЗ)</span>
+          <span class="text-[10px] font-mono text-gray-400">по 4 шт.</span>
         </label>
-        <div class="grid grid-cols-3 gap-1.5 p-1 bg-gray-950 rounded-xl border border-gray-800">
-          <button data-mat="wood" class="mat-btn active py-2 rounded-lg bg-blue-600 text-white font-medium transition flex flex-col items-center gap-1">
-            <span class="w-3 h-3 rounded-full bg-amber-800 border border-amber-600"></span>
-            Дуб / Орех
+        <div class="grid grid-cols-2 gap-1.5">
+          <button data-rosette="chamomile" class="rosette-btn active py-2 px-2.5 rounded-lg bg-blue-600 text-white font-medium text-left transition flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+            <span>1. Юг: Ромашка</span>
           </button>
-          <button data-mat="depth" class="mat-btn py-2 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-white font-medium transition flex flex-col items-center gap-1">
-            <span class="w-3 h-3 rounded-full bg-gradient-to-r from-blue-500 to-rose-500"></span>
-            Карта глубин
+          <button data-rosette="spruce" class="rosette-btn py-2 px-2.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 font-medium text-left transition flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+            <span>2. Север: Ель</span>
           </button>
-          <button data-mat="clay" class="mat-btn py-2 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-white font-medium transition flex flex-col items-center gap-1">
-            <span class="w-3 h-3 rounded-full bg-stone-300 border border-stone-400"></span>
-            CAM Глина
+          <button data-rosette="tulip" class="rosette-btn py-2 px-2.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 font-medium text-left transition flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-rose-400"></span>
+            <span>3. Запад: Тюльпан</span>
+          </button>
+          <button data-rosette="peony" class="rosette-btn py-2 px-2.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 font-medium text-left transition flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-purple-400"></span>
+            <span>4. Восток: Пион</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Секция: Визуальный материал и шейдеры -->
+      <div class="space-y-2">
+        <div class="font-semibold text-gray-300">Материал визуализации</div>
+        <div class="grid grid-cols-4 gap-1 p-1 bg-gray-950 rounded-xl border border-gray-800 text-[11px]">
+          <button data-mat="wood-dark" class="mat-btn active py-1.5 rounded-lg bg-blue-600 text-white font-medium transition text-center">
+            Тёмн. дуб
+          </button>
+          <button data-mat="wood-light" class="mat-btn py-1.5 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-white font-medium transition text-center">
+            Светл. дуб
+          </button>
+          <button data-mat="depth" class="mat-btn py-1.5 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-white font-medium transition text-center">
+            ЧПУ Heat
+          </button>
+          <button data-mat="clay" class="mat-btn py-1.5 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-white font-medium transition text-center">
+            Глина
           </button>
         </div>
         <div class="flex items-center justify-between pt-1">
           <label class="flex items-center gap-2 cursor-pointer text-gray-400 hover:text-gray-200">
             <input type="checkbox" id="toggle-wireframe" class="rounded bg-gray-800 border-gray-700 text-blue-500 focus:ring-0">
-            <span>Каркасная сетка (Wireframe)</span>
+            <span>Каркас (Wireframe)</span>
           </label>
           <label class="flex items-center gap-2 cursor-pointer text-gray-400 hover:text-gray-200">
             <input type="checkbox" id="toggle-grid" checked class="rounded bg-gray-800 border-gray-700 text-blue-500 focus:ring-0">
-            <span>Сетка стола (Grid)</span>
+            <span>Сетка стола</span>
           </label>
         </div>
       </div>
 
-      <!-- Секция: Размеры заготовки -->
-      <div class="p-3 bg-gray-950/60 rounded-xl border border-gray-800/80 space-y-3">
+      <!-- Блок: Параметры заготовки по чертежу -->
+      <div id="board-params-block" class="p-3 bg-gray-950/70 rounded-xl border border-gray-800 space-y-3">
         <div class="text-[11px] font-semibold text-blue-400 uppercase tracking-wider flex justify-between">
-          <span>Габариты заготовки (мм)</span>
-          <span class="text-gray-400">По чертежу</span>
-        </div>
-        
-        <div>
-          <div class="flex justify-between text-gray-400 mb-1">
-            <span>Длина доски (L):</span>
-            <span id="val-length" class="font-mono text-gray-200">585 мм</span>
-          </div>
-          <input id="slider-length" type="range" min="300" max="800" step="5" value="585" class="w-full">
+          <span>Геометрия доски (Лист 1)</span>
+          <span class="text-gray-500">1:1 мм</span>
         </div>
 
         <div>
           <div class="flex justify-between text-gray-400 mb-1">
             <span>Ширина доски (W):</span>
-            <span id="val-width" class="font-mono text-gray-200">160 мм</span>
+            <span id="lbl-width" class="font-mono text-gray-200 font-bold">160 мм</span>
           </div>
-          <input id="slider-width" type="range" min="100" max="250" step="5" value="160" class="w-full">
+          <input id="slider-width" type="range" min="130" max="220" step="2" value="160" class="w-full">
+          <div class="text-[10px] text-gray-500 flex justify-between mt-0.5">
+            <span>Центр. поле: <strong id="lbl-core" class="text-emerald-400">100 мм</strong></span>
+            <span>Поля: <strong class="text-gray-300">2 × 30 мм</strong></span>
+          </div>
+        </div>
+
+        <div>
+          <div class="flex justify-between text-gray-400 mb-1">
+            <span>Длина доски (L):</span>
+            <span id="lbl-length" class="font-mono text-gray-200 font-bold">585 мм</span>
+          </div>
+          <input id="slider-length" type="range" min="400" max="750" step="5" value="585" class="w-full">
         </div>
 
         <div>
           <div class="flex justify-between text-gray-400 mb-1">
             <span>Толщина заготовки (H):</span>
-            <span id="val-thickness" class="font-mono text-gray-200">40 мм</span>
+            <span id="lbl-thickness" class="font-mono text-gray-200 font-bold">40 мм</span>
           </div>
-          <input id="slider-thickness" type="range" min="25" max="60" step="1" value="40" class="w-full">
+          <input id="slider-thickness" type="range" min="25" max="50" step="1" value="40" class="w-full">
+          <div class="text-[10px] text-gray-500 flex justify-between mt-0.5">
+            <span>Чертеж: 25 мм</span>
+            <span>ТЗ пользователя: 40 мм</span>
+          </div>
         </div>
 
         <div>
           <div class="flex justify-between text-gray-400 mb-1">
-            <span>Глубина фрезеровки (Cut):</span>
-            <span id="val-depth" class="font-mono text-emerald-400 font-bold">-20 мм</span>
+            <span>Глубина фрезеровки (Z-cut):</span>
+            <span id="lbl-depth" class="font-mono text-rose-400 font-bold">-20.0 мм</span>
           </div>
-          <input id="slider-depth" type="range" min="5" max="30" step="1" value="20" class="w-full">
+          <input id="slider-depth" type="range" min="8" max="25" step="0.5" value="20" class="w-full">
           <div class="text-[10px] text-gray-400 flex justify-between mt-0.5">
-            <span>Остаточная база детали:</span>
-            <span id="val-base" class="font-mono text-gray-300">20 мм</span>
+            <span>Остаточная база:</span>
+            <span id="lbl-base" class="font-mono text-emerald-400 font-bold">20.0 мм</span>
           </div>
+        </div>
+
+        <div>
+          <div class="flex justify-between text-gray-400 mb-1">
+            <span>V-вырез снизу (клин ласточкин хвост):</span>
+            <span id="lbl-chevron" class="font-mono text-gray-200">30 мм</span>
+          </div>
+          <input id="slider-chevron" type="range" min="10" max="50" step="1" value="30" class="w-full">
+          <div class="text-[10px] text-gray-500 flex justify-between mt-0.5">
+            <span>Площадки по бокам: 10 мм</span>
+            <span>Глубина стрелы: 30 мм</span>
+          </div>
+        </div>
+
+        <div>
+          <div class="flex justify-between text-gray-400 mb-1">
+            <span>Количество медальонов в цепи:</span>
+            <span id="lbl-medallions" class="font-mono text-gray-200">6 шт.</span>
+          </div>
+          <input id="slider-medallions" type="range" min="2" max="6" step="1" value="6" class="w-full">
         </div>
       </div>
 
-      <!-- Секция: Параметры резьбы и декора -->
-      <div class="p-3 bg-gray-950/60 rounded-xl border border-gray-800/80 space-y-3">
-        <div class="text-[11px] font-semibold text-amber-400 uppercase tracking-wider">
-          Элементы резьбы (Орнамент)
-        </div>
-
-        <div>
-          <div class="flex justify-between text-gray-400 mb-1">
-            <span>Количество медальонов:</span>
-            <span id="val-medallions" class="font-mono text-gray-200">5 (Полная деталь)</span>
-          </div>
-          <input id="slider-medallions" type="range" min="2" max="5" step="1" value="5" class="w-full">
-          <div class="flex justify-between text-[10px] text-gray-400 mt-0.5">
-            <span>2 (Укрупненный фрагмент)</span>
-            <span>5 (Колонна 585 мм)</span>
-          </div>
-        </div>
-
-        <div>
-          <div class="flex justify-between text-gray-400 mb-1">
-            <span>Ширина плетеного жгута:</span>
-            <span id="val-ribbon" class="font-mono text-gray-200">14 мм</span>
-          </div>
-          <input id="slider-ribbon" type="range" min="8" max="22" step="1" value="14" class="w-full">
-        </div>
-
-        <div>
-          <div class="flex justify-between text-gray-400 mb-1">
-            <span>Выпуклость купола розетки:</span>
-            <span id="val-dome" class="font-mono text-gray-200">80%</span>
-          </div>
-          <input id="slider-dome" type="range" min="20" max="120" step="5" value="80" class="w-full">
-        </div>
-
-        <div>
-          <div class="flex justify-between text-gray-400 mb-1">
-            <span>Ширина внешней рамки:</span>
-            <span id="val-margin" class="font-mono text-gray-200">14 мм</span>
-          </div>
-          <input id="slider-margin" type="range" min="8" max="24" step="1" value="14" class="w-full">
-        </div>
-      </div>
-
-      <!-- Секция: Сечение (Cross-Section) -->
-      <div class="p-3 bg-gray-950/60 rounded-xl border border-gray-800/80 space-y-2">
+      <!-- Блок: Сечение детали (Cross-Section inspection) -->
+      <div class="p-3 bg-gray-950/70 rounded-xl border border-gray-800 space-y-2">
         <div class="flex items-center justify-between">
-          <span class="text-[11px] font-semibold text-rose-400 uppercase tracking-wider">Сечение детали (Инспекция)</span>
+          <span class="text-[11px] font-semibold text-rose-400 uppercase tracking-wider">Инспекция сечения (Z/Y)</span>
           <input type="checkbox" id="toggle-section" class="rounded bg-gray-800 border-gray-700 text-rose-500 focus:ring-0">
         </div>
-        <div id="section-controls" class="space-y-2 opacity-50 pointer-events-none transition">
+        <div id="section-controls" class="space-y-2 opacity-40 pointer-events-none transition">
           <div class="flex justify-between text-gray-400">
-            <span>Плоскость среза (Y):</span>
-            <span id="val-section" class="font-mono text-gray-200">0 мм</span>
+            <span>Плоскость реза по длине:</span>
+            <span id="lbl-section" class="font-mono text-gray-200">0 мм</span>
           </div>
-          <input id="slider-section" type="range" min="-290" max="290" step="2" value="0" class="w-full">
+          <input id="slider-section" type="range" min="-280" max="280" step="2" value="0" class="w-full">
         </div>
       </div>
 
-      <!-- Секция: Разрешение сетки -->
-      <div class="flex items-center justify-between p-2.5 bg-gray-950/40 rounded-lg border border-gray-800">
-        <div class="text-gray-300">Качество сетки (Mesh Res):</div>
-        <select id="select-res" class="bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs text-gray-200 focus:outline-none focus:border-blue-500">
-          <option value="low">Быстрое (Fast Preview)</option>
-          <option value="med" selected>Оптимальное (CAM Draft)</option>
+      <!-- Секция: Разрешение полигональной сетки -->
+      <div class="flex items-center justify-between p-2.5 bg-gray-950/40 rounded-xl border border-gray-800">
+        <div class="text-gray-300">Качество сетки (CAM Res):</div>
+        <select id="select-res" class="bg-gray-800 border border-gray-700 rounded-lg px-2.5 py-1 text-xs text-gray-200 focus:outline-none">
+          <option value="draft">Черновое (Fast 3D)</option>
+          <option value="med" selected>Оптимальное (CAM Ready)</option>
           <option value="high">Высокое (HQ Carving)</option>
         </select>
       </div>
 
-      <!-- Секция: ЧПУ Экспорт -->
+      <!-- Кнопки экспорта файлов ЧПУ -->
       <div class="space-y-2 pt-1">
-        <div class="text-[11px] font-semibold text-gray-300 uppercase tracking-wider flex items-center gap-1.5">
-          <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-          Экспорт для станков ЧПУ
+        <div class="text-[11px] font-semibold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          Экспорт для станков ЧПУ (CNC CAM)
         </div>
         
-        <button id="btn-export-stl" class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 active:scale-[0.99] text-white font-semibold shadow-lg shadow-blue-900/30 flex items-center justify-center gap-2 transition">
+        <button id="btn-export-stl" class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:to-indigo-500 active:scale-[0.99] text-white font-semibold shadow-lg shadow-blue-950/60 flex items-center justify-center gap-2 transition">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-          Скачать STL (.stl) — Manifold 3D
+          Скачать STL (.stl) — Manifold 1:1
         </button>
 
         <button id="btn-export-heightmap" class="w-full py-2.5 px-4 rounded-xl bg-gray-800 hover:bg-gray-700 active:scale-[0.99] text-gray-200 hover:text-white font-medium border border-gray-700/80 flex items-center justify-center gap-2 transition">
@@ -278,109 +320,114 @@ html
         </button>
       </div>
 
-      <!-- Блок телеметрии CAM Solid -->
+      <!-- Сводка CAM Solid -->
       <div class="p-3 bg-gray-950 rounded-xl border border-gray-800 font-mono text-[10px] space-y-1 text-gray-400">
         <div class="text-gray-300 font-semibold mb-1 flex justify-between">
-          <span>Спецификация CAM Solid:</span>
-          <span class="text-emerald-400">100% Watertight</span>
+          <span>Спецификация CAM тела:</span>
+          <span class="text-emerald-400">Герметично (Watertight)</span>
         </div>
-        <div class="flex justify-between"><span>Габариты XYZ:</span><span id="stat-dim" class="text-gray-200">160 × 585 × 40 мм</span></div>
         <div class="flex justify-between"><span>Треугольников:</span><span id="stat-tris" class="text-gray-200">0</span></div>
-        <div class="flex justify-between"><span>Макс. заглубление:</span><span id="stat-cut" class="text-emerald-400">-20.00 мм</span></div>
-        <div class="flex justify-between"><span>Остаток базы:</span><span id="stat-base" class="text-gray-200">20.00 мм</span></div>
+        <div class="flex justify-between"><span>Вершин:</span><span id="stat-verts" class="text-gray-200">0</span></div>
+        <div class="flex justify-between"><span>Плоское дно Z=0:</span><span class="text-emerald-400">ДА (100%)</span></div>
       </div>
 
     </div>
   </aside>
 
-  <!-- Всплывающий тост для уведомлений (вместо alert) -->
+  <!-- Тост уведомлений -->
   <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-24 opacity-0 transition-all duration-300 pointer-events-none">
     <div class="cad-panel px-4 py-3 rounded-xl shadow-2xl border border-blue-500/40 text-sm flex items-center gap-3">
-      <div id="toast-icon" class="text-blue-400">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      <div class="text-blue-400">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
       </div>
-      <div id="toast-msg" class="text-gray-200 font-medium">Уведомление</div>
+      <div id="toast-msg" class="text-gray-200 font-medium">Сообщение</div>
     </div>
   </div>
 
-  <!-- JavaScript приложения -->
   <script>
-    // --- ПАРАМЕТРЫ ПО УМОЛЧАНИЮ (По чертежу) ---
+    // --- ПАРАМЕТРЫ ПРОЕКТА ПО ЧЕРТЕЖУ ---
     const params = {
-      length: 585,      // мм
-      width: 160,       // мм
-      thickness: 40,    // мм
-      depth: 20,        // мм (выборка)
-      medallions: 5,    // штук
-      ribbonWidth: 14,  // мм
-      domeFactor: 0.8,  // коэффициент купола
-      margin: 14,       // ширина внешней кромки рамки
-      res: 'med',       // low, med, high
-      material: 'wood', // wood, depth, clay
+      mode: 'board',         // 'board' | 'rosette' | 'assembly'
+      rosetteType: 'chamomile', // 'chamomile', 'spruce', 'tulip', 'peony'
+      width: 160,            // мм (общая ширина доски)
+      length: 585,           // мм (длина по чертежу)
+      thickness: 40,         // мм (заготовка: 40 мм по ТЗ)
+      depth: 20,             // мм (глубина фрезеровки)
+      sideMargin: 30,        // мм (по чертежу: слева 30, справа 30 -> центр 100 мм)
+      topMargin: 30,         // мм (отступ сверху)
+      chevronDepth: 30,      // мм (глубина выреза снизу)
+      chevronPad: 10,        // мм (прямые площадки по краям)
+      medallions: 6,         // цепь из медальонов
+      res: 'med',            // 'draft', 'med', 'high'
+      material: 'wood-dark', // 'wood-dark', 'wood-light', 'depth', 'clay'
       wireframe: false,
       grid: true,
       clipping: false,
       clipY: 0
     };
 
-    // --- UI ЭЛЕМЕНТЫ ---
+    // --- ССЫЛКИ НА UI ---
     const ui = {
       canvas: document.getElementById('webgl-canvas'),
       container: document.getElementById('viewport-container'),
-      sliderLength: document.getElementById('slider-length'),
-      valLength: document.getElementById('val-length'),
-      sliderWidth: document.getElementById('slider-width'),
-      valWidth: document.getElementById('val-width'),
-      sliderThickness: document.getElementById('slider-thickness'),
-      valThickness: document.getElementById('val-thickness'),
-      sliderDepth: document.getElementById('slider-depth'),
-      valDepth: document.getElementById('val-depth'),
-      valBase: document.getElementById('val-base'),
-      sliderMedallions: document.getElementById('slider-medallions'),
-      valMedallions: document.getElementById('val-medallions'),
-      sliderRibbon: document.getElementById('slider-ribbon'),
-      valRibbon: document.getElementById('val-ribbon'),
-      sliderDome: document.getElementById('slider-dome'),
-      valDome: document.getElementById('val-dome'),
-      sliderMargin: document.getElementById('slider-margin'),
-      valMargin: document.getElementById('val-margin'),
-      selectRes: document.getElementById('select-res'),
+      sidebar: document.getElementById('sidebar'),
+      toggleSidebar: document.getElementById('toggle-sidebar'),
+      partSubtitle: document.getElementById('part-subtitle'),
+      modeTabs: document.querySelectorAll('.mode-tab'),
+      rosetteBlock: document.getElementById('rosette-selector-block'),
+      boardBlock: document.getElementById('board-params-block'),
+      rosetteBtns: document.querySelectorAll('.rosette-btn'),
+      matBtns: document.querySelectorAll('.mat-btn'),
       toggleWireframe: document.getElementById('toggle-wireframe'),
       toggleGrid: document.getElementById('toggle-grid'),
       toggleSection: document.getElementById('toggle-section'),
       sliderSection: document.getElementById('slider-section'),
-      valSection: document.getElementById('val-section'),
+      lblSection: document.getElementById('lbl-section'),
       sectionControls: document.getElementById('section-controls'),
       depthLegend: document.getElementById('depth-legend'),
-      matBtns: document.querySelectorAll('.mat-btn'),
+      dimOverlay: document.getElementById('dim-overlay'),
+      dimW: document.getElementById('dim-w'),
+      dimL: document.getElementById('dim-l'),
+      dimCore: document.getElementById('dim-core'),
+      dimCut: document.getElementById('dim-cut'),
+      sliderWidth: document.getElementById('slider-width'),
+      lblWidth: document.getElementById('lbl-width'),
+      lblCore: document.getElementById('lbl-core'),
+      sliderLength: document.getElementById('slider-length'),
+      lblLength: document.getElementById('lbl-length'),
+      sliderThickness: document.getElementById('slider-thickness'),
+      lblThickness: document.getElementById('lbl-thickness'),
+      sliderDepth: document.getElementById('slider-depth'),
+      lblDepth: document.getElementById('lbl-depth'),
+      lblBase: document.getElementById('lbl-base'),
+      sliderChevron: document.getElementById('slider-chevron'),
+      lblChevron: document.getElementById('lbl-chevron'),
+      sliderMedallions: document.getElementById('slider-medallions'),
+      lblMedallions: document.getElementById('lbl-medallions'),
+      selectRes: document.getElementById('select-res'),
       btnExportStl: document.getElementById('btn-export-stl'),
       btnExportHeightmap: document.getElementById('btn-export-heightmap'),
-      statDim: document.getElementById('stat-dim'),
       statTris: document.getElementById('stat-tris'),
-      statCut: document.getElementById('stat-cut'),
-      statBase: document.getElementById('stat-base'),
+      statVerts: document.getElementById('stat-verts'),
       toast: document.getElementById('toast'),
-      toastMsg: document.getElementById('toast-msg'),
-      sidebar: document.getElementById('sidebar'),
-      toggleSidebar: document.getElementById('toggle-sidebar')
+      toastMsg: document.getElementById('toast-msg')
     };
 
-    // Функция показа тоста
-    function showToast(msg, isSuccess = true) {
-      ui.toastMsg.textContent = msg;
+    function showToast(text) {
+      ui.toastMsg.textContent = text;
       ui.toast.classList.remove('translate-y-24', 'opacity-0');
       ui.toast.classList.add('translate-y-0', 'opacity-100');
       setTimeout(() => {
         ui.toast.classList.remove('translate-y-0', 'opacity-100');
         ui.toast.classList.add('translate-y-24', 'opacity-0');
-      }, 3200);
+      }, 3000);
     }
 
-    // --- THREE.JS ИНИЦИАЛИЗАЦИЯ СЦЕНЫ ---
+    // --- THREE.JS СЦЕНА ---
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0e131f);
+    scene.background = new THREE.Color(0x0a0e17);
 
-    const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 1, 3000);
+    const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 1, 4000);
     const renderer = new THREE.WebGLRenderer({
       canvas: ui.canvas,
       antialias: true,
@@ -396,72 +443,71 @@ html
     const controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.08;
-    controls.maxDistance = 2000;
-    controls.minDistance = 50;
+    controls.maxDistance = 2200;
+    controls.minDistance = 60;
 
-    // Студийный свет для выявления микрорельефа резьбы
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.55);
+    // Студийный свет для резных рельефов
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.65);
     scene.add(ambientLight);
 
-    const dirLight1 = new THREE.DirectionalLight(0xfff6ea, 1.1); // теплый ключевой свет под углом 45°
-    dirLight1.position.set(250, 400, 350);
+    const dirLight1 = new THREE.DirectionalLight(0xfff5ea, 1.15); // ключевой косой свет
+    dirLight1.position.set(300, 500, 450);
     dirLight1.castShadow = true;
     dirLight1.shadow.mapSize.width = 2048;
     dirLight1.shadow.mapSize.height = 2048;
-    dirLight1.shadow.camera.near = 50;
-    dirLight1.shadow.camera.far = 1200;
-    const d = 350;
-    dirLight1.shadow.camera.left = -d;
-    dirLight1.shadow.camera.right = d;
-    dirLight1.shadow.camera.top = d;
-    dirLight1.shadow.camera.bottom = -d;
     dirLight1.shadow.bias = -0.0005;
+    const dLight = 400;
+    dirLight1.shadow.camera.left = -dLight;
+    dirLight1.shadow.camera.right = dLight;
+    dirLight1.shadow.camera.top = dLight;
+    dirLight1.shadow.camera.bottom = -dLight;
     scene.add(dirLight1);
 
-    const dirLight2 = new THREE.DirectionalLight(0xaad0ff, 0.45); // холодный контровой свет
-    dirLight2.position.set(-250, -350, 200);
+    const dirLight2 = new THREE.DirectionalLight(0x8bc0ff, 0.45); // контровой голубоватый
+    dirLight2.position.set(-300, -400, 300);
     scene.add(dirLight2);
 
-    const rimLight = new THREE.DirectionalLight(0xffffff, 0.4);
-    rimLight.position.set(0, 0, -300);
-    scene.add(rimLight);
+    const bottomBounce = new THREE.DirectionalLight(0xffffff, 0.25);
+    bottomBounce.position.set(0, 0, -250);
+    scene.add(bottomBounce);
 
-    // Миллиметровая сетка рабочего стола ЧПУ
-    const gridHelper = new THREE.GridHelper(1000, 50, 0x3b82f6, 0x1f2937);
-    gridHelper.rotation.x = Math.PI / 2; // сетка в плоскости XY
+    // Сетка ЧПУ стола
+    const gridHelper = new THREE.GridHelper(1000, 50, 0x3b82f6, 0x1e293b);
+    gridHelper.rotation.x = Math.PI / 2;
     gridHelper.position.z = -0.1;
     scene.add(gridHelper);
 
     // Плоскость сечения
     const clipPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 0);
 
-    // --- ГЕНЕРАТОР ПРОЦЕДУРНОЙ ТЕКСТУРЫ ТЕМНОГО ДУБА ---
-    function createWoodTexture() {
+    // --- ГЕНЕРАТОРЫ ТЕКСТУР ДРЕВЕСИНЫ (ПРОЦЕДУРНЫЙ ДУБ) ---
+    function generateOakTexture(isDark = true) {
       const canvas = document.createElement('canvas');
       canvas.width = 1024;
       canvas.height = 1024;
       const ctx = canvas.getContext('2d');
 
-      // Базовый цвет темного благородного ореха / мореного дуба
-      ctx.fillStyle = '#452b1b';
+      const base = isDark ? '#3d2516' : '#9c734b';
+      ctx.fillStyle = base;
       ctx.fillRect(0, 0, 1024, 1024);
 
-      // Годовые кольца и волокна
-      for (let i = 0; i < 1200; i++) {
+      // Годовые слои
+      for (let i = 0; i < 900; i++) {
         const y = Math.random() * 1024;
-        const alpha = 0.05 + Math.random() * 0.15;
-        const w = 1 + Math.random() * 4;
-        ctx.fillStyle = (i % 2 === 0) ? `rgba(32, 17, 9, ${alpha})` : `rgba(88, 54, 34, ${alpha})`;
-        ctx.fillRect(0, y, 1024, w);
+        const alpha = 0.04 + Math.random() * 0.12;
+        ctx.fillStyle = isDark
+          ? (i % 2 === 0 ? `rgba(22, 11, 5, ${alpha})` : `rgba(74, 45, 27, ${alpha})`)
+          : (i % 2 === 0 ? `rgba(90, 60, 35, ${alpha})` : `rgba(180, 145, 105, ${alpha})`);
+        ctx.fillRect(0, y, 1024, 1 + Math.random() * 5);
       }
 
-      // Тонкие продольные поры дерева
-      for (let i = 0; i < 3000; i++) {
+      // Тонкие капилляры/поры дуба
+      for (let i = 0; i < 2500; i++) {
         const x = Math.random() * 1024;
         const y = Math.random() * 1024;
-        const len = 10 + Math.random() * 40;
-        ctx.fillStyle = 'rgba(25, 12, 6, 0.2)';
-        ctx.fillRect(x, y, 1.5, len);
+        const len = 12 + Math.random() * 45;
+        ctx.fillStyle = isDark ? 'rgba(15, 7, 3, 0.28)' : 'rgba(70, 45, 25, 0.22)';
+        ctx.fillRect(x, y, 1.6, len);
       }
 
       const texture = new THREE.CanvasTexture(canvas);
@@ -471,14 +517,15 @@ html
       return texture;
     }
 
-    const woodTexture = createWoodTexture();
+    const darkOakTex = generateOakTexture(true);
+    const lightOakTex = generateOakTexture(false);
 
-    // Шейдер тепловой карты глубин (CNC Heatmap)
-    const depthShaderMaterial = new THREE.ShaderMaterial({
+    // Шейдер карты глубин (CNC Heatmap)
+    const depthShaderMat = new THREE.ShaderMaterial({
       clipping: true,
       uniforms: {
-        minZ: { value: 20.0 }, // глубина дна
-        maxZ: { value: 40.0 }  // верхняя плоскость заготовки
+        minZ: { value: 20.0 },
+        maxZ: { value: 40.0 }
       },
       vertexShader: `
         varying float vZ;
@@ -494,15 +541,11 @@ html
         uniform float maxZ;
         varying float vZ;
         varying vec3 vNormal;
-
-        // Палитра ЧПУ: Синий (0мм) -> Зеленый (-8мм) -> Желтый (-14мм) -> Красный (-20мм)
         vec3 depthColor(float t) {
-          // t: 0.0 = deep cut (-20mm), 1.0 = surface (0mm)
-          if (t > 0.75) return mix(vec3(0.0, 0.85, 0.5), vec3(0.1, 0.5, 1.0), (t - 0.75) * 4.0);
-          if (t > 0.4)  return mix(vec3(1.0, 0.8, 0.0), vec3(0.0, 0.85, 0.5), (t - 0.4) / 0.35);
-          return mix(vec3(0.85, 0.1, 0.1), vec3(1.0, 0.8, 0.0), t / 0.4);
+          if (t > 0.75) return mix(vec3(0.0, 0.85, 0.5), vec3(0.15, 0.55, 1.0), (t - 0.75) * 4.0);
+          if (t > 0.4)  return mix(vec3(1.0, 0.82, 0.0), vec3(0.0, 0.85, 0.5), (t - 0.4) / 0.35);
+          return mix(vec3(0.9, 0.1, 0.1), vec3(1.0, 0.82, 0.0), t / 0.4);
         }
-
         void main() {
           float t = clamp((vZ - minZ) / (maxZ - minZ), 0.0, 1.0);
           vec3 col = depthColor(t);
@@ -512,208 +555,351 @@ html
       `
     });
 
-    // Материалы
     const materials = {
-      wood: new THREE.MeshStandardMaterial({
-        map: woodTexture,
-        roughness: 0.45,
-        metalness: 0.05,
+      'wood-dark': new THREE.MeshStandardMaterial({
+        map: darkOakTex,
+        roughness: 0.48,
+        metalness: 0.03,
         clippingPlanes: [],
         clipShadows: true
       }),
-      depth: depthShaderMaterial,
-      clay: new THREE.MeshStandardMaterial({
-        color: 0xdedede,
-        roughness: 0.55,
-        metalness: 0.05,
+      'wood-light': new THREE.MeshStandardMaterial({
+        map: lightOakTex,
+        roughness: 0.48,
+        metalness: 0.03,
+        clippingPlanes: [],
+        clipShadows: true
+      }),
+      'depth': depthShaderMat,
+      'clay': new THREE.MeshStandardMaterial({
+        color: 0xdfdfdf,
+        roughness: 0.6,
+        metalness: 0.02,
         clippingPlanes: [],
         clipShadows: true
       })
     };
 
-    // --- ФУНКЦИЯ ВЫЧИСЛЕНИЯ РЕЛЬЕФА (HEIGHT FUNCTION) ---
-    // Возвращает высоту рельефа [0.0..1.0], где 1.0 = верхняя кромка (нетронутое дерево, Z=40),
-    // 0.0 = максимальная глубина фрезерования (дно кармана, Z=20)
-    function evaluateReliefHeight(x, y, w, l, medCount, ribbonW, domeFactor, margin) {
-      const halfW = w / 2;
-      const halfL = l / 2;
+    function getActiveMaterial() {
+      let mat = materials[params.material] || materials['wood-dark'];
+      if (params.material === 'depth') {
+        depthShaderMat.uniforms.minZ.value = params.thickness - params.depth;
+        depthShaderMat.uniforms.maxZ.value = params.thickness;
+      }
+      mat.wireframe = params.wireframe;
+      mat.clippingPlanes = params.clipping ? [clipPlane] : [];
+      return mat;
+    }
 
-      // 1. Внешняя гладкая защитная рамка доски
-      const distToBorder = Math.min(halfW - Math.abs(x), halfL - Math.abs(y));
-      if (distToBorder <= 0) return 1.0;
-      if (distToBorder < margin) {
-        // Плавный скос (фаска/галтель фрезы) от внешней рамки к внутреннему полю выборки
-        const t = distToBorder / margin;
-        return 0.15 + 0.85 * (t * t * (3 - 2 * t));
+    function updateMaterialState() {
+      if (currentModelRoot) {
+        currentModelRoot.traverse((child) => {
+          if (child.isMesh) {
+            child.material = getActiveMaterial();
+            child.material.needsUpdate = true;
+          }
+        });
+      }
+      ui.depthLegend.classList.toggle('hidden', params.material !== 'depth');
+    }
+
+    // --- МАТЕМАТИЧЕСКИЕ ФУНКЦИИ РЕЛЬЕФА (HEIGHT FUNCTIONS) ---
+
+    // 1. Рельеф резной доски (Лист 1)
+    // Возвращает высоту рельефа [0.0..1.0]
+    function evalBoardRelief(x, y, W, L, medCount, cutDepth) {
+      const halfW = W / 2;
+      const coreHalfW = 50; // поле ровно 100 мм (|x| <= 50)
+      const sideMargin = halfW - coreHalfW; // ровно 30 мм при W=160
+
+      // Вне резного поля: верхняя плоскость заготовки (Z=0 относительно верха, то есть h=1.0)
+      if (Math.abs(x) >= coreHalfW) {
+        return 1.0;
       }
 
-      // Внутреннее рабочее поле резьбы
-      const innerW = w - 2 * margin;
-      const innerL = l - 2 * margin;
+      // Отступ сверху
+      const topLimit = L / 2 - params.topMargin;
+      if (y >= topLimit) {
+        const t = Math.min(1.0, (y - topLimit) / 5.0);
+        return 0.2 + 0.8 * (t * t);
+      }
 
-      // Базовая плоскость выборки фона (глубокий карман фрезеровки)
-      let h = 0.08;
+      // V-образная нижняя стрелка: линия низа
+      const chevronBaseY = -L / 2;
+      const chevronApexY = -L / 2 + params.chevronDepth;
+      let cutY = chevronBaseY;
+      if (Math.abs(x) <= (halfW - params.chevronPad)) {
+        const factor = 1.0 - Math.abs(x) / (halfW - params.chevronPad);
+        cutY = chevronBaseY + params.chevronDepth * factor;
+      }
+      if (y <= cutY + 12) {
+        const t = Math.max(0.0, (cutY + 12 - y) / 12.0);
+        return 0.15 + 0.85 * (t * t);
+      }
 
-      // Тонкая фактура следов полукруглой стамески / чистовой конической фрезы
-      const chiseled = Math.sin(x * 0.45) * Math.cos(y * 0.45) * 0.025;
-      h += Math.max(0, chiseled);
+      // Базовая выборка фона кармана фрезерования (фон заглублен на -20 мм -> h = 0.05)
+      let h = 0.06;
 
-      // 2. Медальоны с концентрическими валиками и розетками
-      const spacingY = innerL / medCount;
-      const startY = -innerL / 2 + spacingY / 2;
-      const medR = Math.min(innerW * 0.46, spacingY * 0.46); // внешний радиус розетки
+      // Следы чистового прохода сферической фрезы
+      h += Math.abs(Math.sin(x * 0.35) * Math.cos(y * 0.35)) * 0.02;
 
-      let bestMedallionDist = 9999;
-      let activeMedIdx = -1;
-      let localMedX = 0;
-      let localMedY = 0;
+      // 6 Медальонов в колонне
+      const innerL = topLimit - (chevronApexY + 15);
+      const stepY = innerL / medCount;
+      const startY = (chevronApexY + 15) + stepY / 2;
+      const medR = 43.5; // радиус розетки (диаметр 87 мм, идеально внутри поля 100 мм)
+
+      let minDist = 9999;
+      let activeX = 0;
+      let activeY = 0;
 
       for (let i = 0; i < medCount; i++) {
-        const cy = startY + i * spacingY;
+        const cy = startY + i * stepY;
         const dx = x;
         const dy = y - cy;
         const d = Math.sqrt(dx * dx + dy * dy);
-        if (d < bestMedallionDist) {
-          bestMedallionDist = d;
-          activeMedIdx = i;
-          localMedX = dx;
-          localMedY = dy;
+        if (d < minDist) {
+          minDist = d;
+          activeX = dx;
+          activeY = dy;
         }
       }
 
-      const r = bestMedallionDist;
+      const r = minDist;
 
-      // Формирование структуры круглого медальона:
-      // Внешний валик (торус) -> желобок -> выпуклый купол -> 4 пары радиальных пазов -> 4 заклепки
+      // А) Внешний тороидальный выпуклый валик медальона
       const ringOuterR = medR;
       const ringInnerR = medR * 0.72;
       const ringMidR = (ringOuterR + ringInnerR) / 2;
-      const ringWidth = (ringOuterR - ringInnerR) / 2;
+      const ringHalfW = (ringOuterR - ringInnerR) / 2;
 
-      // А) Внешний объемный тороидальный валик (рельефный обод)
       if (r <= ringOuterR && r >= ringInnerR) {
-        const ringDist = Math.abs(r - ringMidR);
-        const ringH = Math.cos((ringDist / ringWidth) * (Math.PI / 2));
-        const val = 0.35 + 0.60 * Math.max(0, ringH);
-        h = Math.max(h, val);
+        const dr = Math.abs(r - ringMidR);
+        const bead = Math.cos((dr / ringHalfW) * (Math.PI / 2));
+        h = Math.max(h, 0.32 + 0.64 * bead);
       }
 
-      // Б) Внутренний выпуклый купол (линза медальона)
-      const domeR = ringInnerR - 2.5; // отступ на заглубленный желобок
+      // Б) Внутренний купол с насечками и заклепками
+      const domeR = ringInnerR - 2.5;
       if (r < domeR) {
         const t = r / domeR;
-        // Параболический выпуклый купол
-        let dome = Math.cos(t * (Math.PI / 2)) * 0.72 * domeFactor;
-        
-        // В) 4 пары радиальных вырезов/зарубок по сторонам света (12, 3, 6, 9 часов)
-        const angle = Math.atan2(localMedY, localMedX); // [-PI..PI]
-        // 4 квадранта с шагом 90 градусов
-        const modA = Math.abs((angle + Math.PI * 2) % (Math.PI / 2) - (Math.PI / 4));
-        const notchAngleDist = modA; // расстояние от лучей
-        
-        // Двойные риски на 0, 90, 180, 270 градусов:
+        let dome = Math.cos(t * (Math.PI / 2)) * 0.75;
+
+        // Насечки-лучи по 4 сторонам света
+        const angle = Math.atan2(activeY, activeX);
         const angleFromAxes = Math.min(
           Math.abs(angle - 0),
           Math.abs(angle - Math.PI / 2),
           Math.abs(angle + Math.PI / 2),
           Math.abs(Math.abs(angle) - Math.PI)
         );
-
-        // Парные лучи с угловым расстоянием ~8 градусов
-        const rayOffset = 0.13;
-        const dRay1 = Math.abs(angleFromAxes - rayOffset);
-        const dRay2 = Math.abs(angleFromAxes + rayOffset);
-        const nearRay = Math.min(dRay1, dRay2);
-
-        if (nearRay < 0.055 && r > domeR * 0.35 && r < domeR * 0.95) {
-          const cutIntensity = (1.0 - nearRay / 0.055);
-          dome -= cutIntensity * 0.38; // врезание стамески
+        const rayOffset = 0.12;
+        const dRay = Math.min(Math.abs(angleFromAxes - rayOffset), Math.abs(angleFromAxes + rayOffset));
+        if (dRay < 0.05 && r > domeR * 0.35 && r < domeR * 0.95) {
+          dome -= (1.0 - dRay / 0.05) * 0.36; // прорезь
         }
 
-        // Г) 4 угловые круглые бобышки-заклепки (под 45 градусов в углах медальона)
-        const studR = 4.2; // радиус заклепки
-        const studDistCenter = domeR * 0.65; // расстояние от центра
+        // 4 заклепки-бобышки в углах (45°)
+        const studDist = domeR * 0.62;
         for (let sa = 0; sa < 4; sa++) {
-          const sAngle = (Math.PI / 4) + sa * (Math.PI / 2);
-          const sx = Math.cos(sAngle) * studDistCenter;
-          const sy = Math.sin(sAngle) * studDistCenter;
-          const dStud = Math.sqrt((localMedX - sx) ** 2 + (localMedY - sy) ** 2);
-          if (dStud < studR) {
-            const studH = Math.cos((dStud / studR) * (Math.PI / 2)) * 0.32;
-            dome = Math.max(dome, dome + studH);
+          const a = Math.PI / 4 + sa * (Math.PI / 2);
+          const sx = Math.cos(a) * studDist;
+          const sy = Math.sin(a) * studDist;
+          const ds = Math.sqrt((activeX - sx) ** 2 + (activeY - sy) ** 2);
+          if (ds < 4.5) {
+            dome = Math.max(dome, dome + Math.cos((ds / 4.5) * (Math.PI / 2)) * 0.35);
           }
         }
 
-        h = Math.max(h, 0.20 + Math.max(0, dome));
+        h = Math.max(h, 0.22 + Math.max(0, dome));
       }
 
-      // 3. Плетеная рельефная вязь (жгут/ленты), огибающие круги и пересекающиеся между ними
-      // Ленты идут вертикальной змейкой вокруг медальонов и перекрещиваются в промежутках
+      // В) Плетеный жгут (византийская лента), огибающий медальоны и перекрещивающийся
+      const ribbonW = 13.5;
       for (let i = 0; i < medCount - 1; i++) {
-        const cy1 = startY + i * spacingY;
-        const cy2 = startY + (i + 1) * spacingY;
-        const midY = (cy1 + cy2) / 2;
-
-        // В зоне между медальонами ленты пересекаются в виде X-образного узла (восьмерка)
+        const cy1 = startY + i * stepY;
+        const cy2 = startY + (i + 1) * stepY;
         if (y >= cy1 && y <= cy2) {
-          const progress = (y - cy1) / spacingY; // 0..1
-          // Центр левой ленты
-          const waveX1 = Math.sin(progress * Math.PI) * (innerW * 0.38);
-          // Центр правой ленты
-          const waveX2 = -waveX1;
-
-          const distL1 = Math.abs(x - waveX1);
-          const distL2 = Math.abs(x - waveX2);
-
+          const prog = (y - cy1) / stepY;
+          const waveX = Math.sin(prog * Math.PI) * 36;
+          const d1 = Math.abs(x - waveX);
+          const d2 = Math.abs(x + waveX);
           const halfRib = ribbonW / 2;
 
-          // Левая лента
-          if (distL1 < halfRib) {
-            const profile = Math.cos((distL1 / halfRib) * (Math.PI / 2));
-            // Перехлест по высоте (эффект плетения: одна лента сверху, другая снизу)
-            const weaveMod = (progress > 0.4 && progress < 0.6) ? 0.90 : 0.70;
-            h = Math.max(h, 0.22 + profile * weaveMod);
+          if (d1 < halfRib) {
+            const ribH = Math.cos((d1 / halfRib) * (Math.PI / 2));
+            const weave = (prog > 0.42 && prog < 0.58) ? 0.92 : 0.70;
+            h = Math.max(h, 0.25 + ribH * weave);
           }
-
-          // Правая лента
-          if (distL2 < halfRib) {
-            const profile = Math.cos((distL2 / halfRib) * (Math.PI / 2));
-            const weaveMod = (progress > 0.4 && progress < 0.6) ? 0.60 : 0.85;
-            h = Math.max(h, 0.22 + profile * weaveMod);
+          if (d2 < halfRib) {
+            const ribH = Math.cos((d2 / halfRib) * (Math.PI / 2));
+            const weave = (prog > 0.42 && prog < 0.58) ? 0.65 : 0.88;
+            h = Math.max(h, 0.25 + ribH * weave);
           }
         }
       }
 
-      // 4. Боковые спиральные завитки (растительные побеги по углам у рамки)
-      const cornerDx = halfW - margin - Math.abs(x);
-      if (cornerDx > 0 && cornerDx < 35) {
-        // Волнообразные валики вдоль левого и правого края
-        const waveTendril = Math.sin(y * (Math.PI * 2 / (spacingY * 0.5))) * 10;
-        const dTendril = Math.abs(cornerDx - (12 + waveTendril * 0.35));
-        if (dTendril < ribbonW * 0.4) {
-          const p = Math.cos((dTendril / (ribbonW * 0.4)) * (Math.PI / 2));
-          h = Math.max(h, 0.20 + p * 0.65);
+      // Г) Боковые завитки-волюты в углах поля 100 мм
+      const sideDist = coreHalfW - Math.abs(x);
+      if (sideDist < 20) {
+        const volute = Math.sin(y * (Math.PI * 2 / (stepY * 0.5))) * 8;
+        const dv = Math.abs(sideDist - (8 + volute * 0.3));
+        if (dv < 5.0) {
+          h = Math.max(h, 0.22 + Math.cos((dv / 5.0) * (Math.PI / 2)) * 0.58);
         }
       }
 
       return Math.min(1.0, Math.max(0.0, h));
     }
 
-    // --- ПОСТРОЕНИЕ 100% МОНОЛИТНОЙ СЕТКИ (WATERTIGHT SOLID MESH) ---
-    // Формирует замкнутый параллелепипед: верхний резной рельеф, плоское дно на Z=0,
-    // и 4 вертикальные стенки по периметру. Полное отсутствие незамкнутых ребер (Non-manifold).
-    let currentMesh = null;
-    let solidGeometry = null;
+    // 2. Рельефы 4 розеток (Лист 2 ТЗ)
+    // Размер розетки: квадрат 160х160 мм (или 182х182 мм)
+    function evalRosetteRelief(x, y, size, type) {
+      const half = size / 2;
+      const margin = 16;
+      // Внешняя ступенчатая рамка
+      const distBorder = Math.min(half - Math.abs(x), half - Math.abs(y));
+      if (distBorder <= 0) return 1.0;
+      if (distBorder < margin) {
+        // Профилированный калевочный валик рамки
+        const t = distBorder / margin;
+        return 0.35 + 0.65 * (t * t * (3 - 2 * t));
+      }
 
-    function buildSolidCarvedMesh() {
-      // Определение плотности сетки в зависимости от режима
+      // Внутреннее резное поле розетки
+      const innerRadius = half - margin;
+      const r = Math.sqrt(x * x + y * y);
+      const angle = Math.atan2(y, x);
+
+      let h = 0.10; // дно выборки фона
+
+      if (type === 'chamomile') {
+        // 1. ЮЖНЫЙ ФАСАД — РОМАШКА
+        // Круглая сердцевина в центре + 16 радиальных лепестков с продольными желобками
+        const centerR = 17;
+        if (r < centerR) {
+          const dome = Math.cos((r / centerR) * (Math.PI / 2));
+          // Фактура тычинок
+          const bump = Math.sin(x * 1.5) * Math.cos(y * 1.5) * 0.05;
+          return 0.45 + dome * 0.52 + bump;
+        }
+
+        if (r <= innerRadius) {
+          // 16 лепестков
+          const numPetals = 16;
+          const petalAngle = (Math.PI * 2) / numPetals;
+          const modA = ((angle % petalAngle) + petalAngle) % petalAngle;
+          const diffA = Math.abs(modA - petalAngle / 2);
+          const petalWidthR = (r / innerRadius) * (petalAngle / 2);
+
+          if (diffA < petalWidthR) {
+            const crossProfile = Math.cos((diffA / petalWidthR) * (Math.PI / 2));
+            const lenProfile = Math.sin(((r - centerR) / (innerRadius - centerR)) * Math.PI);
+            // Продольная центральная бороздка на лепестке
+            const groove = Math.abs(diffA) < (petalWidthR * 0.25) ? 0.18 : 0.0;
+            h = Math.max(h, 0.25 + crossProfile * lenProfile * 0.72 - groove);
+          }
+        }
+
+      } else if (type === 'spruce') {
+        // 2. СЕВЕРНЫЙ ФАСАД — ЕЛЬ
+        // Стилизованное ярусное хвойное древо / шишка со стрельчатым бутоном наверху
+        const trunkW = 8;
+        if (Math.abs(x) < trunkW && y < -10) {
+          h = Math.max(h, 0.35 + Math.cos((x / trunkW) * (Math.PI / 2)) * 0.4);
+        }
+
+        // 5 ярусов расходящихся вверх и в стороны ветвей-лап
+        for (let tier = 0; tier < 5; tier++) {
+          const tierY = -35 + tier * 18;
+          const tierW = 48 - tier * 7;
+          const dy = y - tierY;
+          // Стреловидная ветвь
+          const branchY = tierY + Math.abs(x) * 0.45;
+          const distBranch = Math.abs(y - branchY);
+          if (distBranch < 9 && Math.abs(x) < tierW) {
+            const p = Math.cos((distBranch / 9) * (Math.PI / 2)) * (1.0 - Math.abs(x) / tierW);
+            h = Math.max(h, 0.28 + p * 0.68);
+          }
+        }
+        // Стрельчатый наконечник-верхушка
+        if (y > 45 && y < 65 && Math.abs(x) < (65 - y) * 0.5) {
+          h = Math.max(h, 0.4 + (65 - y) * 0.025);
+        }
+
+      } else if (type === 'tulip') {
+        // 3. ЗАПАДНЫЙ ФАСАД — ТЮЛЬПАН
+        // Центральный стрельчатый лепесток + два крупных боковых отгибающихся лепестка
+        const stemW = 7;
+        if (Math.abs(x) < stemW && y < -25) {
+          h = Math.max(h, 0.35 + Math.cos((x / stemW) * (Math.PI / 2)) * 0.45);
+        }
+
+        // Чашелистик у основания
+        const baseD = Math.sqrt(x * x + (y + 20) ** 2);
+        if (baseD < 16) {
+          h = Math.max(h, 0.45 + Math.cos((baseD / 16) * (Math.PI / 2)) * 0.48);
+        }
+
+        // Центральный лепесток
+        if (Math.abs(x) < 18 && y > -20 && y < 58) {
+          const normY = (y + 20) / 78; // 0..1
+          const shapeW = Math.sin(normY * Math.PI) * 16;
+          if (Math.abs(x) < shapeW) {
+            const cp = Math.cos((x / shapeW) * (Math.PI / 2));
+            h = Math.max(h, 0.32 + cp * 0.65 * (1.1 - normY * 0.3));
+          }
+        }
+
+        // Боковые крылья-лепестки тюльпана
+        const wingDistL = Math.sqrt((x + 26) ** 2 + (y - 8) ** 2);
+        const wingDistR = Math.sqrt((x - 26) ** 2 + (y - 8) ** 2);
+        if (wingDistL < 24) {
+          h = Math.max(h, 0.28 + Math.cos((wingDistL / 24) * (Math.PI / 2)) * 0.62);
+        }
+        if (wingDistR < 24) {
+          h = Math.max(h, 0.28 + Math.cos((wingDistR / 24) * (Math.PI / 2)) * 0.62);
+        }
+
+      } else if (type === 'peony') {
+        // 4. ВОСТОЧНЫЙ ФАСАД — ПИОН
+        // Пышный махровый раскрывающийся цветок с волнообразными краями лепестков
+        const centerBud = Math.sqrt(x * x + y * y);
+        if (centerBud < 14) {
+          const spiral = Math.sin(angle * 3 + centerBud * 0.5) * 0.1;
+          h = Math.max(h, 0.55 + Math.cos((centerBud / 14) * (Math.PI / 2)) * 0.42 + spiral);
+        }
+
+        // 3 концентрических яруса волнистых лепестков
+        for (let ring = 1; ring <= 3; ring++) {
+          const rMid = ring * 16;
+          const rWidth = 10;
+          const dr = Math.abs(r - rMid);
+          if (dr < rWidth) {
+            // Волнообразный контур лепестков пиона
+            const waves = Math.sin(angle * (5 + ring * 2)) * 2.5;
+            const profile = Math.cos(((dr + waves) / rWidth) * (Math.PI / 2));
+            h = Math.max(h, 0.22 + Math.max(0, profile) * (0.85 - ring * 0.12));
+          }
+        }
+      }
+
+      return Math.min(1.0, Math.max(0.0, h));
+    }
+
+    // --- ГЕНЕРАТОР ГЕРМЕТИЧНЫХ СЕТОК ДЛЯ ЧПУ (100% WATERTIGHT SOLIDS) ---
+    let currentModelRoot = null;
+    let solidMeshGeometryForSTL = null;
+
+    // Построение сетки резной доски с V-образным ласточкиным хвостом
+    function generateBoardSolidGeometry() {
       let nx, ny;
-      if (params.res === 'low') {
-        nx = 60;
-        ny = Math.round(60 * (params.length / params.width));
+      if (params.res === 'draft') {
+        nx = 70;
+        ny = Math.round(70 * (params.length / params.width));
       } else if (params.res === 'med') {
-        nx = 110;
-        ny = Math.round(110 * (params.length / params.width));
+        nx = 120;
+        ny = Math.round(120 * (params.length / params.width));
       } else {
         nx = 180;
         ny = Math.round(180 * (params.length / params.width));
@@ -722,214 +908,388 @@ html
       const W = params.width;
       const L = params.length;
       const H = params.thickness;
-      const cutDepth = params.depth;
-      const remainingBase = H - cutDepth;
+      const cut = params.depth;
+      const baseH = H - cut;
 
-      const numTopVerts = nx * ny;
-      const numBottomVerts = nx * ny;
-      const totalVerts = numTopVerts + numBottomVerts;
+      const halfW = W / 2;
+      const halfL = L / 2;
+      const chevronH = params.chevronDepth;
+      const padW = params.chevronPad;
+
+      // Аналитическая параметризация сетки (u, v):
+      // Сетка точно следует V-образному вырезу снизу и прямой кромке сверху
+      const numVertsTop = nx * ny;
+      const numVertsBot = nx * ny;
+      const totalVerts = numVertsTop + numVertsBot;
 
       const positions = new Float32Array(totalVerts * 3);
       const uvs = new Float32Array(totalVerts * 2);
 
-      const dx = W / (nx - 1);
-      const dy = L / (ny - 1);
+      // Вспомогательная функция вычисления Y нижней кромки
+      function getBottomEdgeY(x) {
+        if (Math.abs(x) > (halfW - padW)) {
+          return -halfL; // крайние площадки 10 мм
+        }
+        const t = 1.0 - Math.abs(x) / (halfW - padW);
+        return -halfL + chevronH * t; // стрела ласточкина хвоста
+      }
 
-      // Заполнение вершин верхней резной поверхности (Top Relief)
+      // 1. Верхние вершины резного рельефа
       for (let j = 0; j < ny; j++) {
-        const y = -L / 2 + j * dy;
+        const v = j / (ny - 1);
         for (let i = 0; i < nx; i++) {
-          const x = -W / 2 + i * dx;
+          const u = i / (nx - 1);
+          const x = -halfW + u * W;
+          const yBot = getBottomEdgeY(x);
+          const yTop = halfL;
+          const y = yBot + v * (yTop - yBot);
+
+          const relH = evalBoardRelief(x, y, W, L, params.medallions, cut);
+          const z = baseH + relH * cut;
+
           const idx = (j * nx + i) * 3;
-
-          const relH = evaluateReliefHeight(
-            x, y, W, L,
-            params.medallions,
-            params.ribbonWidth,
-            params.domeFactor,
-            params.margin
-          );
-
-          // Z: от (H - cutDepth) на дне выборки до H на верхней плоскости
-          const z = remainingBase + relH * cutDepth;
-
           positions[idx] = x;
           positions[idx + 1] = y;
           positions[idx + 2] = z;
 
           const uvIdx = (j * nx + i) * 2;
-          uvs[uvIdx] = i / (nx - 1);
-          uvs[uvIdx + 1] = j / (ny - 1);
+          uvs[uvIdx] = u;
+          uvs[uvIdx + 1] = v;
         }
       }
 
-      // Заполнение вершин нижнего плоского основания (Bottom Flat Base Z = 0)
-      const bottomOffset = numTopVerts;
+      // 2. Нижние вершины (Плоское ровное дно заготовки на Z = 0)
+      const botOffset = numVertsTop;
       for (let j = 0; j < ny; j++) {
-        const y = -L / 2 + j * dy;
+        const v = j / (ny - 1);
         for (let i = 0; i < nx; i++) {
-          const x = -W / 2 + i * dx;
-          const idx = (bottomOffset + (j * nx + i)) * 3;
+          const u = i / (nx - 1);
+          const x = -halfW + u * W;
+          const yBot = getBottomEdgeY(x);
+          const yTop = halfL;
+          const y = yBot + v * (yTop - yBot);
 
+          const idx = (botOffset + (j * nx + i)) * 3;
           positions[idx] = x;
           positions[idx + 1] = y;
-          positions[idx + 2] = 0; // ровное дно доски на столе
+          positions[idx + 2] = 0; // Строго плоское основание Z=0
 
-          const uvIdx = (bottomOffset + (j * nx + i)) * 2;
-          uvs[uvIdx] = i / (nx - 1);
-          uvs[uvIdx + 1] = j / (ny - 1);
+          const uvIdx = (botOffset + (j * nx + i)) * 2;
+          uvs[uvIdx] = u;
+          uvs[uvIdx + 1] = v;
         }
       }
 
-      // Генерация треугольников
+      // 3. Формирование треугольников (Watertight Manifold Shell)
       const indices = [];
 
-      // 1. Верхние полигоны рельефа (нормали смотрят вверх +Z)
+      // Верхний рельеф (Нормали +Z)
       for (let j = 0; j < ny - 1; j++) {
         for (let i = 0; i < nx - 1; i++) {
           const a = j * nx + i;
           const b = j * nx + (i + 1);
           const c = (j + 1) * nx + (i + 1);
           const d = (j + 1) * nx + i;
-
           indices.push(a, b, c);
           indices.push(a, c, d);
         }
       }
 
-      // 2. Нижние полигоны основания (нормали смотрят вниз -Z)
+      // Нижнее плоское дно (Нормали -Z)
       for (let j = 0; j < ny - 1; j++) {
         for (let i = 0; i < nx - 1; i++) {
-          const a = bottomOffset + (j * nx + i);
-          const b = bottomOffset + (j * nx + (i + 1));
-          const c = bottomOffset + ((j + 1) * nx + (i + 1));
-          const d = bottomOffset + ((j + 1) * nx + i);
-
+          const a = botOffset + (j * nx + i);
+          const b = botOffset + (j * nx + (i + 1));
+          const c = botOffset + ((j + 1) * nx + (i + 1));
+          const d = botOffset + ((j + 1) * nx + i);
           indices.push(a, c, b);
           indices.push(a, d, c);
         }
       }
 
-      // 3. Вертикальные боковые стенки по периметру (соединяют верх и дно)
-      // А) Южная стенка (Front, j = 0)
+      // Вертикальные стенки 1: Фигурный низ (ласточкин хвост)
       for (let i = 0; i < nx - 1; i++) {
-        const top1 = i;
-        const top2 = i + 1;
-        const bot1 = bottomOffset + i;
-        const bot2 = bottomOffset + (i + 1);
-
-        indices.push(top1, bot1, bot2);
-        indices.push(top1, bot2, top2);
+        const t1 = i;
+        const t2 = i + 1;
+        const b1 = botOffset + i;
+        const b2 = botOffset + (i + 1);
+        indices.push(t1, b1, b2);
+        indices.push(t1, b2, t2);
       }
 
-      // Б) Северная стенка (Back, j = ny - 1)
-      const rowOffsetTop = (ny - 1) * nx;
-      const rowOffsetBot = bottomOffset + (ny - 1) * nx;
+      // Вертикальные стенки 2: Верхняя кромка
+      const rowTopT = (ny - 1) * nx;
+      const rowTopB = botOffset + (ny - 1) * nx;
       for (let i = 0; i < nx - 1; i++) {
-        const top1 = rowOffsetTop + i;
-        const top2 = rowOffsetTop + (i + 1);
-        const bot1 = rowOffsetBot + i;
-        const bot2 = rowOffsetBot + (i + 1);
-
-        indices.push(top1, top2, bot2);
-        indices.push(top1, bot2, bot1);
+        const t1 = rowTopT + i;
+        const t2 = rowTopT + (i + 1);
+        const b1 = rowTopB + i;
+        const b2 = rowTopB + (i + 1);
+        indices.push(t1, t2, b2);
+        indices.push(t1, b2, b1);
       }
 
-      // В) Западная стенка (Left, i = 0)
+      // Вертикальные стенки 3: Левая кромка
       for (let j = 0; j < ny - 1; j++) {
-        const top1 = j * nx;
-        const top2 = (j + 1) * nx;
-        const bot1 = bottomOffset + (j * nx);
-        const bot2 = bottomOffset + ((j + 1) * nx);
-
-        indices.push(top1, top2, bot2);
-        indices.push(top1, bot2, bot1);
+        const t1 = j * nx;
+        const t2 = (j + 1) * nx;
+        const b1 = botOffset + (j * nx);
+        const b2 = botOffset + ((j + 1) * nx);
+        indices.push(t1, t2, b2);
+        indices.push(t1, b2, b1);
       }
 
-      // Г) Восточная стенка (Right, i = nx - 1)
+      // Вертикальные стенки 4: Правая кромка
       for (let j = 0; j < ny - 1; j++) {
-        const top1 = j * nx + (nx - 1);
-        const top2 = (j + 1) * nx + (nx - 1);
-        const bot1 = bottomOffset + (j * nx + (nx - 1));
-        const bot2 = bottomOffset + ((j + 1) * nx + (nx - 1));
-
-        indices.push(top1, bot1, bot2);
-        indices.push(top1, bot2, top2);
+        const t1 = j * nx + (nx - 1);
+        const t2 = (j + 1) * nx + (nx - 1);
+        const b1 = botOffset + (j * nx + (nx - 1));
+        const b2 = botOffset + ((j + 1) * nx + (nx - 1));
+        indices.push(t1, b1, b2);
+        indices.push(t1, b2, t2);
       }
 
-      // Создание BufferGeometry
-      if (solidGeometry) solidGeometry.dispose();
-      solidGeometry = new THREE.BufferGeometry();
-      solidGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-      solidGeometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
-      solidGeometry.setIndex(indices);
-      solidGeometry.computeVertexNormals();
+      const geom = new THREE.BufferGeometry();
+      geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      geom.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+      geom.setIndex(indices);
+      geom.computeVertexNormals();
 
-      // Обновление меша на сцене
-      if (currentMesh) {
-        scene.remove(currentMesh);
+      return geom;
+    }
+
+    // Построение сетки розетки (Лист 2)
+    function generateRosetteSolidGeometry(size, type) {
+      const n = (params.res === 'draft') ? 70 : (params.res === 'med' ? 120 : 180);
+      const H = params.thickness;
+      const cut = params.depth;
+      const baseH = H - cut;
+
+      const numVerts = n * n;
+      const totalVerts = numVerts * 2;
+
+      const positions = new Float32Array(totalVerts * 3);
+      const uvs = new Float32Array(totalVerts * 2);
+      const step = size / (n - 1);
+      const half = size / 2;
+
+      // Верх
+      for (let j = 0; j < n; j++) {
+        const y = -half + j * step;
+        for (let i = 0; i < n; i++) {
+          const x = -half + i * step;
+          const idx = (j * n + i) * 3;
+
+          const relH = evalRosetteRelief(x, y, size, type);
+          positions[idx] = x;
+          positions[idx + 1] = y;
+          positions[idx + 2] = baseH + relH * cut;
+
+          const uvIdx = (j * n + i) * 2;
+          uvs[uvIdx] = i / (n - 1);
+          uvs[uvIdx + 1] = j / (n - 1);
+        }
       }
 
+      // Дно (Z=0)
+      const botOffset = numVerts;
+      for (let j = 0; j < n; j++) {
+        const y = -half + j * step;
+        for (let i = 0; i < n; i++) {
+          const x = -half + i * step;
+          const idx = (botOffset + (j * n + i)) * 3;
+
+          positions[idx] = x;
+          positions[idx + 1] = y;
+          positions[idx + 2] = 0;
+
+          const uvIdx = (botOffset + (j * n + i)) * 2;
+          uvs[uvIdx] = i / (n - 1);
+          uvs[uvIdx + 1] = j / (n - 1);
+        }
+      }
+
+      const indices = [];
+
+      // Верх
+      for (let j = 0; j < n - 1; j++) {
+        for (let i = 0; i < n - 1; i++) {
+          const a = j * n + i;
+          const b = j * n + (i + 1);
+          const c = (j + 1) * n + (i + 1);
+          const d = (j + 1) * n + i;
+          indices.push(a, b, c);
+          indices.push(a, c, d);
+        }
+      }
+
+      // Дно
+      for (let j = 0; j < n - 1; j++) {
+        for (let i = 0; i < n - 1; i++) {
+          const a = botOffset + (j * n + i);
+          const b = botOffset + (j * n + (i + 1));
+          const c = botOffset + ((j + 1) * n + (i + 1));
+          const d = botOffset + ((j + 1) * n + i);
+          indices.push(a, c, b);
+          indices.push(a, d, c);
+        }
+      }
+
+      // Стенки
+      for (let i = 0; i < n - 1; i++) {
+        // Юг
+        indices.push(i, botOffset + i, botOffset + (i + 1));
+        indices.push(i, botOffset + (i + 1), i + 1);
+        // Север
+        const t1 = (n - 1) * n + i;
+        const b1 = botOffset + (n - 1) * n + i;
+        indices.push(t1, t1 + 1, b1 + 1);
+        indices.push(t1, b1 + 1, b1);
+      }
+      for (let j = 0; j < n - 1; j++) {
+        // Запад
+        const t1 = j * n;
+        const b1 = botOffset + j * n;
+        indices.push(t1, t1 + n, b1 + n);
+        indices.push(t1, b1 + n, b1);
+        // Восток
+        const t2 = j * n + (n - 1);
+        const b2 = botOffset + j * n + (n - 1);
+        indices.push(t2, b2, b2 + n);
+        indices.push(t2, b2 + n, t2 + n);
+      }
+
+      const geom = new THREE.BufferGeometry();
+      geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      geom.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+      geom.setIndex(indices);
+      geom.computeVertexNormals();
+
+      return geom;
+    }
+
+    // --- СБОРКА И ОБНОВЛЕНИЕ 3D СЦЕНЫ ---
+    function rebuildSceneModel() {
+      if (currentModelRoot) {
+        scene.remove(currentModelRoot);
+        currentModelRoot.traverse((c) => {
+          if (c.geometry) c.geometry.dispose();
+        });
+      }
+
+      currentModelRoot = new THREE.Group();
       const activeMat = getActiveMaterial();
-      currentMesh = new THREE.Mesh(solidGeometry, activeMat);
-      currentMesh.castShadow = true;
-      currentMesh.receiveShadow = true;
-      scene.add(currentMesh);
 
-      // Обновление индикаторов телеметрии
-      const triCount = indices.length / 3;
-      ui.statTris.textContent = triCount.toLocaleString('ru-RU');
-      ui.statDim.textContent = `${W} × ${L} × ${H} мм`;
-      ui.statCut.textContent = `-${cutDepth.toFixed(1)} мм`;
-      ui.statBase.textContent = `${remainingBase.toFixed(1)} мм`;
-    }
+      if (params.mode === 'board') {
+        // Режим 1: Резная доска стойки
+        solidMeshGeometryForSTL = generateBoardSolidGeometry();
+        const mesh = new THREE.Mesh(solidMeshGeometryForSTL, activeMat);
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        currentModelRoot.add(mesh);
 
-    function getActiveMaterial() {
-      let mat;
-      if (params.material === 'wood') mat = materials.wood;
-      else if (params.material === 'depth') {
-        depthShaderMaterial.uniforms.minZ.value = params.thickness - params.depth;
-        depthShaderMaterial.uniforms.maxZ.value = params.thickness;
-        mat = materials.depth;
-      } else mat = materials.clay;
+        ui.partSubtitle.textContent = `Доска: ${params.width} × ${params.length} мм | Резное поле: 100 мм`;
+        ui.boardBlock.classList.remove('hidden');
+        ui.rosetteBlock.classList.add('hidden');
+        ui.dimOverlay.classList.remove('hidden');
 
-      mat.wireframe = params.wireframe;
-      mat.clippingPlanes = params.clipping ? [clipPlane] : [];
-      return mat;
-    }
+        // Телеметрия
+        ui.statTris.textContent = (solidMeshGeometryForSTL.index.count / 3).toLocaleString('ru-RU');
+        ui.statVerts.textContent = solidMeshGeometryForSTL.attributes.position.count.toLocaleString('ru-RU');
 
-    function updateMaterial() {
-      if (currentMesh) {
-        currentMesh.material = getActiveMaterial();
-        currentMesh.material.needsUpdate = true;
+      } else if (params.mode === 'rosette') {
+        // Режим 2: Квадратная розетка капители
+        const rosetteSize = 160;
+        solidMeshGeometryForSTL = generateRosetteSolidGeometry(rosetteSize, params.rosetteType);
+        const mesh = new THREE.Mesh(solidMeshGeometryForSTL, activeMat);
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        currentModelRoot.add(mesh);
+
+        const names = {
+          chamomile: '1. Южный фасад — Ромашка',
+          spruce: '2. Северный фасад — Ель',
+          tulip: '3. Западный фасад — Тюльпан',
+          peony: '4. Восточный фасад — Пион'
+        };
+        ui.partSubtitle.textContent = `Розетка (Лист 2): ${names[params.rosetteType]} (160×160 мм)`;
+        ui.boardBlock.classList.add('hidden');
+        ui.rosetteBlock.classList.remove('hidden');
+        ui.dimOverlay.classList.add('hidden');
+
+        ui.statTris.textContent = (solidMeshGeometryForSTL.index.count / 3).toLocaleString('ru-RU');
+        ui.statVerts.textContent = solidMeshGeometryForSTL.attributes.position.count.toLocaleString('ru-RU');
+
+      } else if (params.mode === 'assembly') {
+        // Режим 3: Угловой элемент Престола (L-склейка 182х182 мм с капителью)
+        ui.boardBlock.classList.add('hidden');
+        ui.rosetteBlock.classList.remove('hidden');
+        ui.dimOverlay.classList.add('hidden');
+        ui.partSubtitle.textContent = `Угловая склейка: 182 × 182 мм (4 угловых элемента)`;
+
+        // Базовые панели
+        const boardGeom = generateBoardSolidGeometry();
+        solidMeshGeometryForSTL = boardGeom; // для экспорта берется доска
+
+        // Панель 1 (Фас)
+        const panel1 = new THREE.Mesh(boardGeom, activeMat);
+        panel1.castShadow = true;
+        panel1.position.set(0, 0, 0);
+
+        // Панель 2 (Бок, под 90 градусов со склейкой в четверть/ус)
+        const panel2 = new THREE.Mesh(boardGeom, activeMat);
+        panel2.castShadow = true;
+        // Поворот на 90 градусов вокруг Y и сдвиг для формирования L-угла 182х182 мм
+        panel2.rotation.y = -Math.PI / 2;
+        panel2.position.set(-params.width / 2 + params.thickness / 2, 0, -params.width / 2 + params.thickness / 2);
+
+        currentModelRoot.add(panel1);
+        currentModelRoot.add(panel2);
+
+        // Верхняя капитель и фриз
+        const capGeom = new THREE.BoxGeometry(182, 35, 182);
+        const capMesh = new THREE.Mesh(capGeom, activeMat);
+        capMesh.position.set(-11, params.length / 2 + 17.5, -11);
+        currentModelRoot.add(capMesh);
+
+        // Верхний кубический блок с выбранной розеткой
+        const rosetteGeom = generateRosetteSolidGeometry(160, params.rosetteType);
+        const rosetteFront = new THREE.Mesh(rosetteGeom, activeMat);
+        rosetteFront.position.set(0, params.length / 2 + 35 + 80, 0);
+        currentModelRoot.add(rosetteFront);
+
+        const rosetteSide = new THREE.Mesh(rosetteGeom, activeMat);
+        rosetteSide.rotation.y = -Math.PI / 2;
+        rosetteSide.position.set(-params.width / 2 + params.thickness / 2, params.length / 2 + 35 + 80, -params.width / 2 + params.thickness / 2);
+        currentModelRoot.add(rosetteSide);
+
+        ui.statTris.textContent = "Сборка L-узла";
+        ui.statVerts.textContent = "182 × 182 мм";
       }
-      ui.depthLegend.classList.toggle('hidden', params.material !== 'depth');
+
+      scene.add(currentModelRoot);
+      updateMaterialState();
     }
 
-    // --- БИНАРНЫЙ ЭКСПОРТ В ФОРМАТ STL (.stl) ---
-    // Формирует стандартный промышленный бинарный STL с точным масштабом 1:1 в миллиметрах
+    // --- БИНАРНЫЙ ЭКСПОРТ STL (1:1 MM WATERTIGHT) ---
     function exportBinarySTL() {
-      if (!solidGeometry) return;
+      if (!solidMeshGeometryForSTL) return;
+      showToast('Формирование промышленного бинарного STL...');
 
-      showToast('Генерация бинарного STL файла...');
-
-      const geom = solidGeometry;
+      const geom = solidMeshGeometryForSTL;
       const index = geom.index;
       const pos = geom.attributes.position;
       const numTris = index.count / 3;
 
-      // Размер буфера STL: 80 байт заголовка + 4 байта кол-во полигонов + (50 байт на треугольник)
       const bufferSize = 84 + numTris * 50;
       const buffer = new ArrayBuffer(bufferSize);
       const view = new DataView(buffer);
 
-      // Заголовок (80 символов ASCII)
-      const headerStr = "Solid CNC Carved Panel - Prestol 160x585x40mm - Stameska";
+      // Заголовок (80 байт)
+      const title = `CNC Solid - Prestol 1580 Stameska - ${params.mode}`;
       for (let i = 0; i < 80; i++) {
-        view.setUint8(i, i < headerStr.length ? headerStr.charCodeAt(i) : 0x20);
+        view.setUint8(i, i < title.length ? title.charCodeAt(i) : 32);
       }
-
-      // Количество треугольников (32-bit unsigned integer)
       view.setUint32(80, numTris, true);
 
       let offset = 84;
@@ -938,103 +1298,92 @@ html
       const pC = new THREE.Vector3();
       const cb = new THREE.Vector3();
       const ab = new THREE.Vector3();
-      const normal = new THREE.Vector3();
+      const norm = new THREE.Vector3();
 
       for (let i = 0; i < index.count; i += 3) {
-        const iA = index.getX(i);
-        const iB = index.getX(i + 1);
-        const iC = index.getX(i + 2);
+        pA.fromBufferAttribute(pos, index.getX(i));
+        pB.fromBufferAttribute(pos, index.getX(i + 1));
+        pC.fromBufferAttribute(pos, index.getX(i + 2));
 
-        pA.fromBufferAttribute(pos, iA);
-        pB.fromBufferAttribute(pos, iB);
-        pC.fromBufferAttribute(pos, iC);
-
-        // Расчет фасетной нормали треугольника
         cb.subVectors(pC, pB);
         ab.subVectors(pA, pB);
-        normal.crossVectors(cb, ab).normalize();
+        norm.crossVectors(cb, ab).normalize();
 
-        // Нормаль (3 float)
-        view.setFloat32(offset, normal.x, true);
-        view.setFloat32(offset + 4, normal.y, true);
-        view.setFloat32(offset + 8, normal.z, true);
+        // Normal
+        view.setFloat32(offset, norm.x, true);
+        view.setFloat32(offset + 4, norm.y, true);
+        view.setFloat32(offset + 8, norm.z, true);
         offset += 12;
 
-        // Вершина 1
+        // V1
         view.setFloat32(offset, pA.x, true);
         view.setFloat32(offset + 4, pA.y, true);
         view.setFloat32(offset + 8, pA.z, true);
         offset += 12;
 
-        // Вершина 2
+        // V2
         view.setFloat32(offset, pB.x, true);
         view.setFloat32(offset + 4, pB.y, true);
         view.setFloat32(offset + 8, pB.z, true);
         offset += 12;
 
-        // Вершина 3
+        // V3
         view.setFloat32(offset, pC.x, true);
         view.setFloat32(offset + 4, pC.y, true);
         view.setFloat32(offset + 8, pC.z, true);
         offset += 12;
 
-        // Атрибут (2 байта нулей)
         view.setUint16(offset, 0, true);
         offset += 2;
       }
 
-      // Скачивание файла
       const blob = new Blob([buffer], { type: 'application/octet-stream' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
-      link.download = `Prestol_Carved_Panel_${params.width}x${params.length}x${params.thickness}mm.stl`;
+      const filename = params.mode === 'board'
+        ? `Prestol_1580_Doska_${params.width}x${params.length}x${params.thickness}mm.stl`
+        : `Prestol_1580_Rozetka_${params.rosetteType}_160mm.stl`;
+      link.download = filename;
       link.click();
       URL.revokeObjectURL(link.href);
 
-      const sizeMb = (bufferSize / (1024 * 1024)).toFixed(1);
-      showToast(`STL готов! Загрузка: ${link.download} (${sizeMb} МБ)`);
+      const mb = (bufferSize / (1024 * 1024)).toFixed(1);
+      showToast(`STL выгружен: ${filename} (${mb} МБ)`);
     }
 
-    // --- ЭКСПОРТ КАРТЫ ВЫСОТ (.PNG) ДЛЯ ARTCAM / VECTRIC ASPIRE ---
+    // --- ЭКСПОРТ КАРТЫ ВЫСОТ PNG (DISPLACEMENT HEIGHTMAP) ---
     function exportHeightmap() {
-      showToast('Генерация 8/16-битной карты высот (PNG)...');
+      showToast('Генерация карты высот для CAM...');
 
-      const W = params.width;
-      const L = params.length;
+      const isBoard = params.mode !== 'rosette';
+      const W = isBoard ? params.width : 160;
+      const L = isBoard ? params.length : 160;
 
-      // Разрешение карты высот (1 пиксель = 0.25 мм для высокой четкости рельефа)
-      const resX = Math.round(W * 4);
-      const resY = Math.round(L * 4);
+      const pxW = Math.round(W * 3.5);
+      const pxL = Math.round(L * 3.5);
 
       const canvas = document.createElement('canvas');
-      canvas.width = resX;
-      canvas.height = resY;
+      canvas.width = pxW;
+      canvas.height = pxL;
       const ctx = canvas.getContext('2d');
-      const imgData = ctx.createImageData(resX, resY);
+      const imgData = ctx.createImageData(pxW, pxL);
       const data = imgData.data;
 
-      for (let py = 0; py < resY; py++) {
-        // переводим Y пикселей в координаты детали (Y от +L/2 до -L/2)
-        const y = L / 2 - (py / (resY - 1)) * L;
-        for (let px = 0; px < resX; px++) {
-          const x = -W / 2 + (px / (resX - 1)) * W;
+      for (let py = 0; py < pxL; py++) {
+        const y = L / 2 - (py / (pxL - 1)) * L;
+        for (let px = 0; px < pxW; px++) {
+          const x = -W / 2 + (px / (pxW - 1)) * W;
 
-          const h = evaluateReliefHeight(
-            x, y, W, L,
-            params.medallions,
-            params.ribbonWidth,
-            params.domeFactor,
-            params.margin
-          );
+          const relH = isBoard
+            ? evalBoardRelief(x, y, W, L, params.medallions, params.depth)
+            : evalRosetteRelief(x, y, 160, params.rosetteType);
 
-          // h = 1.0 (белый: верх доски, 0 мм выборки)
-          // h = 0.0 (черный: глубина 20 мм)
-          const val = Math.round(h * 255);
-          const idx = (py * resX + px) * 4;
-          data[idx] = val;     // R
-          data[idx + 1] = val; // G
-          data[idx + 2] = val; // B
-          data[idx + 3] = 255; // A
+          const val = Math.round(relH * 255);
+          const idx = (py * pxW + px) * 4;
+          data[idx] = val;
+          data[idx + 1] = val;
+          data[idx + 2] = val;
+          data[idx + 3] = 255;
         }
       }
 
@@ -1043,30 +1392,32 @@ html
       canvas.toBlob((blob) => {
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = `Prestol_Heightmap_${W}x${L}mm_Relief.png`;
+        link.download = isBoard
+          ? `Heightmap_Prestol_Doska_${W}x${L}mm.png`
+          : `Heightmap_Rozetka_${params.rosetteType}.png`;
         link.click();
         URL.revokeObjectURL(link.href);
-        showToast(`Карта высот сохранена: ${resX}x${resY} px`);
+        showToast(`Карта высот ${pxW}x${pxL}px скачана!`);
       }, 'image/png');
     }
 
-    // --- УСТАНОВКА КАМЕРЫ НА ДЕТАЛЬ ---
+    // --- КАМЕРА И ВИДЫ ---
     function setCameraView(type) {
-      const maxDim = Math.max(params.length, params.width);
+      const maxDim = params.mode === 'board' ? params.length : 250;
       const dist = maxDim * 1.35;
 
       switch (type) {
         case 'iso':
-          camera.position.set(dist * 0.7, -dist * 0.8, dist * 0.75);
+          camera.position.set(dist * 0.7, -dist * 0.85, dist * 0.75);
           break;
         case 'top':
-          camera.position.set(0, 0, dist * 1.25);
+          camera.position.set(0, 0, dist * 1.3);
           break;
         case 'front':
-          camera.position.set(0, -dist * 1.15, params.thickness * 2);
+          camera.position.set(0, -dist * 1.25, params.thickness * 2);
           break;
         case 'side':
-          camera.position.set(dist * 1.15, 0, params.thickness * 2);
+          camera.position.set(dist * 1.25, 0, params.thickness * 2);
           break;
       }
       controls.target.set(0, 0, params.thickness / 2);
@@ -1074,9 +1425,36 @@ html
       controls.update();
     }
 
-    // --- ОБРАБОТЧИКИ СОБЫТИЙ И ИНТЕРФЕЙС ---
-    function setupEventListeners() {
-      // Кнопки материалов
+    // --- НАСТРОЙКА ОБРАБОТЧИКОВ ИНТЕРФЕЙСА ---
+    function initUIEvents() {
+      // Переключатель режимов деталей
+      ui.modeTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          ui.modeTabs.forEach(t => t.classList.remove('bg-blue-600', 'text-white'));
+          tab.classList.add('bg-blue-600', 'text-white');
+          if (tab.id === 'mode-board') params.mode = 'board';
+          else if (tab.id === 'mode-rosette') params.mode = 'rosette';
+          else if (tab.id === 'mode-assembly') params.mode = 'assembly';
+          rebuildSceneModel();
+          setCameraView('iso');
+        });
+      });
+
+      // Переключатель типа розеток (Лист 2)
+      ui.rosetteBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          ui.rosetteBtns.forEach(b => {
+            b.classList.remove('active', 'bg-blue-600', 'text-white');
+            b.classList.add('bg-gray-800', 'text-gray-300');
+          });
+          btn.classList.add('active', 'bg-blue-600', 'text-white');
+          btn.classList.remove('bg-gray-800', 'text-gray-300');
+          params.rosetteType = btn.getAttribute('data-rosette');
+          rebuildSceneModel();
+        });
+      });
+
+      // Переключатель материалов
       ui.matBtns.forEach(btn => {
         btn.addEventListener('click', () => {
           ui.matBtns.forEach(b => {
@@ -1086,14 +1464,13 @@ html
           btn.classList.add('active', 'bg-blue-600', 'text-white');
           btn.classList.remove('text-gray-400');
           params.material = btn.getAttribute('data-mat');
-          updateMaterial();
+          updateMaterialState();
         });
       });
 
-      // Переключатели
       ui.toggleWireframe.addEventListener('change', (e) => {
         params.wireframe = e.target.checked;
-        updateMaterial();
+        updateMaterialState();
       });
 
       ui.toggleGrid.addEventListener('change', (e) => {
@@ -1103,124 +1480,112 @@ html
       // Сечение
       ui.toggleSection.addEventListener('change', (e) => {
         params.clipping = e.target.checked;
-        ui.sectionControls.classList.toggle('opacity-50', !params.clipping);
+        ui.sectionControls.classList.toggle('opacity-40', !params.clipping);
         ui.sectionControls.classList.toggle('pointer-events-none', !params.clipping);
-        updateMaterial();
+        updateMaterialState();
       });
 
       ui.sliderSection.addEventListener('input', (e) => {
         const val = parseFloat(e.target.value);
         params.clipY = val;
-        ui.valSection.textContent = `${val > 0 ? '+' : ''}${val} мм`;
+        ui.lblSection.textContent = `${val > 0 ? '+' : ''}${val} мм`;
         clipPlane.constant = val;
       });
 
-      // Слайдеры габаритов
-      ui.sliderLength.addEventListener('input', (e) => {
-        params.length = parseFloat(e.target.value);
-        ui.valLength.textContent = `${params.length} мм`;
-        ui.sliderSection.min = (-params.length / 2).toFixed(0);
-        ui.sliderSection.max = (params.length / 2).toFixed(0);
-        buildSolidCarvedMesh();
-      });
-
+      // Слайдеры заготовки
       ui.sliderWidth.addEventListener('input', (e) => {
         params.width = parseFloat(e.target.value);
-        ui.valWidth.textContent = `${params.width} мм`;
-        buildSolidCarvedMesh();
+        ui.lblWidth.textContent = `${params.width} мм`;
+        ui.dimW.textContent = `${params.width} мм`;
+        const core = params.width - 2 * params.sideMargin;
+        ui.lblCore.textContent = `${core} мм`;
+        ui.dimCore.textContent = `${core} мм`;
+        rebuildSceneModel();
+      });
+
+      ui.sliderLength.addEventListener('input', (e) => {
+        params.length = parseFloat(e.target.value);
+        ui.lblLength.textContent = `${params.length} мм`;
+        ui.dimL.textContent = `${params.length} мм`;
+        ui.sliderSection.min = (-params.length / 2).toFixed(0);
+        ui.sliderSection.max = (params.length / 2).toFixed(0);
+        rebuildSceneModel();
       });
 
       ui.sliderThickness.addEventListener('input', (e) => {
         params.thickness = parseFloat(e.target.value);
-        ui.valThickness.textContent = `${params.thickness} мм`;
-        // Ограничиваем выборку, чтобы не прорезать насквозь
-        if (params.depth >= params.thickness) {
+        ui.lblThickness.textContent = `${params.thickness} мм`;
+        if (params.depth >= params.thickness - 4) {
           params.depth = params.thickness - 5;
           ui.sliderDepth.value = params.depth;
-          ui.valDepth.textContent = `-${params.depth} мм`;
+          ui.lblDepth.textContent = `-${params.depth} мм`;
         }
-        ui.sliderDepth.max = (params.thickness - 5);
-        ui.valBase.textContent = `${(params.thickness - params.depth)} мм`;
-        buildSolidCarvedMesh();
+        ui.sliderDepth.max = (params.thickness - 4);
+        ui.lblBase.textContent = `${(params.thickness - params.depth).toFixed(1)} мм`;
+        rebuildSceneModel();
       });
 
       ui.sliderDepth.addEventListener('input', (e) => {
         params.depth = parseFloat(e.target.value);
-        ui.valDepth.textContent = `-${params.depth} мм`;
-        ui.valBase.textContent = `${(params.thickness - params.depth)} мм`;
-        buildSolidCarvedMesh();
+        ui.lblDepth.textContent = `-${params.depth.toFixed(1)} мм`;
+        ui.dimCut.textContent = `-${params.depth.toFixed(1)} мм`;
+        ui.lblBase.textContent = `${(params.thickness - params.depth).toFixed(1)} мм`;
+        rebuildSceneModel();
       });
 
-      // Слайдеры орнамента
+      ui.sliderChevron.addEventListener('input', (e) => {
+        params.chevronDepth = parseFloat(e.target.value);
+        ui.lblChevron.textContent = `${params.chevronDepth} мм`;
+        rebuildSceneModel();
+      });
+
       ui.sliderMedallions.addEventListener('input', (e) => {
         params.medallions = parseInt(e.target.value, 10);
-        ui.valMedallions.textContent = params.medallions === 5 ? '5 (Полная деталь)' : `${params.medallions} шт.`;
-        buildSolidCarvedMesh();
-      });
-
-      ui.sliderRibbon.addEventListener('input', (e) => {
-        params.ribbonWidth = parseFloat(e.target.value);
-        ui.valRibbon.textContent = `${params.ribbonWidth} мм`;
-        buildSolidCarvedMesh();
-      });
-
-      ui.sliderDome.addEventListener('input', (e) => {
-        const val = parseInt(e.target.value, 10);
-        params.domeFactor = val / 100;
-        ui.valDome.textContent = `${val}%`;
-        buildSolidCarvedMesh();
-      });
-
-      ui.sliderMargin.addEventListener('input', (e) => {
-        params.margin = parseFloat(e.target.value);
-        ui.valMargin.textContent = `${params.margin} мм`;
-        buildSolidCarvedMesh();
+        ui.lblMedallions.textContent = `${params.medallions} шт.`;
+        rebuildSceneModel();
       });
 
       ui.selectRes.addEventListener('change', (e) => {
         params.res = e.target.value;
-        buildSolidCarvedMesh();
+        rebuildSceneModel();
       });
 
-      // Кнопки видов
+      // Ракурсы
       document.getElementById('view-iso').addEventListener('click', () => setCameraView('iso'));
       document.getElementById('view-top').addEventListener('click', () => setCameraView('top'));
       document.getElementById('view-front').addEventListener('click', () => setCameraView('front'));
       document.getElementById('view-side').addEventListener('click', () => setCameraView('side'));
-      document.getElementById('reset-cam').addEventListener('click', () => setCameraView('iso'));
 
-      // Кнопки экспорта
+      // Экспорт
       ui.btnExportStl.addEventListener('click', exportBinarySTL);
       ui.btnExportHeightmap.addEventListener('click', exportHeightmap);
 
-      // Кнопка сворачивания сайдбара на мобильных
+      // Мобильный сайдбар
       ui.toggleSidebar.addEventListener('click', () => {
         ui.sidebar.classList.toggle('translate-y-full');
       });
 
-      // Ресайз окна
-      window.addEventListener('resize', onWindowResize);
+      window.addEventListener('resize', onResize);
     }
 
-    function onWindowResize() {
-      const width = ui.container.clientWidth;
-      const height = ui.container.clientHeight;
-      camera.aspect = width / height;
+    function onResize() {
+      const w = ui.container.clientWidth;
+      const h = ui.container.clientHeight;
+      camera.aspect = w / h;
       camera.updateProjectionMatrix();
-      renderer.setSize(width, height);
+      renderer.setSize(w, h);
     }
 
-    // --- ЦИКЛ АНИМАЦИИ ---
     function animate() {
       requestAnimationFrame(animate);
       controls.update();
       renderer.render(scene, camera);
     }
 
-    // Запуск приложения
+    // Инициализация
     window.onload = function () {
-      setupEventListeners();
-      buildSolidCarvedMesh();
+      initUIEvents();
+      rebuildSceneModel();
       setCameraView('iso');
       animate();
     };
